@@ -97,6 +97,12 @@ body.dark #sidebar, body.dark #toolbar {
 body.dark #current_colors > canvas {
     border: 1px solid white;
 }
+#color_picker {
+    position: absolute;
+    opacity: 0;
+    top: -1000px;
+    left: -1000px;
+}
 #fg {
     top: 4px;
     left: 4px;

@@ -1,4 +1,4 @@
-const {ega, c64} = require("./palette");
+const {palette_4bit, index_to_ansi} = require("./palette");
 const {Textmode, add_sauce_for_ans} = require("./textmode");
 const {cp437_to_unicode_bytes} = require("./encodings");
 
@@ -416,56 +416,56 @@ class Ansi extends Textmode {
         } else if (this.rows < screen.rows) {
             screen.rows = this.rows;
         }
-        if (this.font_name == "C64 PETSCII unshifted" || this.font_name == "C64 PETSCII shifted") {
-            this.palette = c64;
-        } else {
-            this.palette = ega;
-        }
+        this.palette = palette_4bit;
         this.custom_colors = screen.unique_custom_colors();
         this.data = screen.trim_data();
     }
 }
 
-function bin_to_ansi_colour(bin_colour) {
-    switch (bin_colour) {
-    case 1: return 4;
-    case 3: return 6;
-    case 4: return 1;
-    case 6: return 3;
-    case 9: return 12;
-    case 11: return 14;
-    case 12: return 9;
-    case 14: return 11;
-    default: return bin_colour;
-    }
-}
+// function bin_to_ansi_colour(bin_colour) {
+//     switch (bin_colour) {
+//     case 1: return 4;
+//     case 3: return 6;
+//     case 4: return 1;
+//     case 6: return 3;
+//     case 9: return 12;
+//     case 11: return 14;
+//     case 12: return 9;
+//     case 14: return 11;
+//     default: return bin_colour;
+//     }
+// }
 
-function clr_to_ascii(color, output) {
-    switch (color) {
-        case 10: output.push(49, 48); break;
-        case 11: output.push(49, 49); break;
-        case 12: output.push(49, 50); break;
-        case 13: output.push(49, 51); break;
-        case 14: output.push(49, 52); break;
-        case 15: output.push(49, 53); break;
-        default: output.push(color + 48); break;
-    }
+// function clr_to_ascii(color, output) {
+//     switch (color) {
+//         case 10: output.push(49, 48); break;
+//         case 11: output.push(49, 49); break;
+//         case 12: output.push(49, 50); break;
+//         case 13: output.push(49, 51); break;
+//         case 14: output.push(49, 52); break;
+//         case 15: output.push(49, 53); break;
+//         default: output.push(color + 48); break;
+//     }
+// }
+
+function to_bytes(string) {
+    return Array.from(string).map((b) => b.charCodeAt(0))
 }
 
 function encode_as_ansi(doc, save_without_sauce, {utf8 = false} = {}) {
     let output = [27, 91, 48, 109];
+    const esc = (seq) => output.push(27, ...to_bytes(seq));
+
     let bold = false;
     let blink = false;
     let current_fg = 7;
     let current_bg = 0;
     let current_bold = false;
     let current_blink = false;
+
     for (let i = 0; i < doc.data.length; i++) {
         let attribs = [];
         let {code, fg, bg} = doc.data[i];
-        if (doc.c64_background != undefined) {
-            bg = doc.c64_background;
-        }
         switch (code) {
         case 10: code = 9; break;
         case 13: code = 14; break;
@@ -475,25 +475,16 @@ function encode_as_ansi(doc, save_without_sauce, {utf8 = false} = {}) {
         }
         if (utf8) {
             if ((fg > 7 && current_fg < 7) || (bg > 7 && current_bg < 7)) {
-                output.push(27, 91, 48, 109);
+                esc('[0m');
                 current_fg = 7;
                 current_bg = 0;
             }
-            if (fg != current_fg) {
-                output.push(27, 91, 51, 56, 59, 53, 59);
-                clr_to_ascii(bin_to_ansi_colour(fg), output);
-                output.push(109);
+            if (fg !== current_fg) {
+                esc(`[38;5;${index_to_ansi(fg)}m`)
                 current_fg = fg;
             }
-            if (bg != current_bg) {
-                if (bg == 0) {
-                    output.push(27, 91, 52, 57, 109);
-                }
-                else {
-                    output.push(27, 91, 52, 56, 59, 53, 59);
-                    clr_to_ascii(bin_to_ansi_colour(bg), output);
-                    output.push(109);
-                }
+            if (bg !== current_bg) {
+                esc(bg === 0 ? '[49m' : `[49;5;${index_to_ansi(bg)}m`)
                 current_bg = bg;
             }
         }
@@ -504,12 +495,14 @@ function encode_as_ansi(doc, save_without_sauce, {utf8 = false} = {}) {
             } else {
                 bold = false;
             }
+
             if (bg > 7) {
                 blink = true;
                 bg = bg - 8;
             } else {
                 blink = false;
             }
+
             if ((current_bold && !bold) || (current_blink && !blink)) {
                 attribs.push([48]);
                 current_fg = 7;
@@ -517,22 +510,27 @@ function encode_as_ansi(doc, save_without_sauce, {utf8 = false} = {}) {
                 current_bold = false;
                 current_blink = false;
             }
+
             if (bold && !current_bold) {
                 attribs.push([49]);
                 current_bold = true;
             }
+
             if (blink && !current_blink) {
                 attribs.push([53]);
                 current_blink = true;
             }
-            if (fg != current_fg) {
-                attribs.push([51, 48 + bin_to_ansi_colour(fg)]);
+
+            if (fg !== current_fg) {
+                attribs.push([51, 48 + index_to_ansi(fg)]);
                 current_fg = fg;
             }
-            if (bg != current_bg) {
-                attribs.push([52, 48 + bin_to_ansi_colour(bg)]);
+
+            if (bg !== current_bg) {
+                attribs.push([52, 48 + index_to_ansi(bg)]);
                 current_bg = bg;
             }
+
             if (attribs.length) {
                 output.push(27, 91);
                 for (let i = 0; i < attribs.length; i += 1) {
@@ -547,7 +545,9 @@ function encode_as_ansi(doc, save_without_sauce, {utf8 = false} = {}) {
                 }
             }
         }
-        if (code == 32 && bg == 0) {
+
+        if (code === 32 && bg === 0) {
+            // I think this is the bug that causes a failure to wrap the line.
             for (let j = i + 1; j < doc.data.length; j++) {
                 if (j % doc.columns == 0) {
                     output.push(13, 10);
@@ -564,17 +564,18 @@ function encode_as_ansi(doc, save_without_sauce, {utf8 = false} = {}) {
                     break;
                 }
             }
-        } else if (utf8) {
-            output.push.apply(output, cp437_to_unicode_bytes(code));
         } else {
-            output.push(code);
+            output.push(...(utf8 ? cp437_to_unicode_bytes(code) : [code]));
         }
     }
+
     const bytes = new Uint8Array(output);
-    if (utf8) return bytes;
-    if (!save_without_sauce) {
+
+    // add the sauce if we're not utf8, and we haven't excluded it.
+    if (!utf8 && !save_without_sauce) {
         return add_sauce_for_ans({doc, bytes});
     }
+
     return bytes;
 }
 

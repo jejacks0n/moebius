@@ -72,21 +72,33 @@ function save(destroy_when_done = false, save_without_sauce = false) {
     }
 }
 
-function save_as(destroy_when_done = false) {
-    const file = save_box(doc.file, "ans", {filters: [{name: "ANSI Art", extensions: ["ans", "asc", "diz", "nfo", "txt"]}, {name: "XBin", extensions: ["xb"]}, {name: "Binary Text", extensions: ["bin"]}]});
-    if (file) {
+async function save_as(destroy_when_done = false) {
+    debugger
+    const ext = doc.file.toString().split('.').pop()
+    const file = save_box(doc.file, ext || "ans", { filters: doc.save_filters() });
+    if (!file) return;
+
+    if (file === doc.file) {
         doc.file = file;
         doc.edited = false;
         save(destroy_when_done);
+    } else {
+        await doc.save_backup(file)
+        await doc.open(file);
     }
 }
 
-function save_without_sauce() {
-    const file = save_box(doc.file, "ans", {filters: [{name: "ANSI Art", extensions: ["ans", "asc", "diz", "nfo", "txt"]}, {name: "XBin", extensions: ["xb"]}, {name: "Binary Text", extensions: ["bin"]}]});
-    if (file) {
+async function save_without_sauce() {
+    const ext = doc.file.toString().split('.').pop()
+    const file = save_box(doc.file, ext || "ans", { filters: doc.save_filters() });
+
+    if (file === doc.file) {
         doc.file = file;
         doc.edited = false;
         save(false, true);
+    } else {
+        await doc.save_backup(file)
+        await doc.open(file);
     }
 }
 
