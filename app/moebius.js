@@ -3,6 +3,7 @@ const electron = require("electron");
 const window = require("./window");
 const menu = require("./menu");
 const touchbar = require("./touchbar");
+const { doc_types } = require("./libtextmode/libtextmode");
 const path = require("path");
 const docs = {};
 let last_win_pos;
@@ -68,11 +69,13 @@ async function new_document({columns, rows, title, author, group, date, palette,
     const win = await new_document_window();
     if (!author) author = prefs.get("nick");
     if (!group) group = prefs.get("group");
+
+    const file = (doc_types[prefs.get("new_document_type")] || {default_filename: 'Untitled.ans'}).default_filename
     if (!rows) {
-        const num = Number.parseInt(prefs.get("new_document_rows"));
-        rows = (num >= 1 && num <=3000) ? num : 25;
+        const num = parseInt(prefs.get("new_document_rows"), 10);
+        rows = (num >= 1 && num <= 3000) ? num : 25;
     }
-    win.send("new_document", {columns, rows, title, author, group, date, palette, font_name, use_9px_font, ice_colors, comments, data});
+    win.send("new_document", {columns, rows, title, file, author, group, date, palette, font_name, use_9px_font, ice_colors, comments, data});
 }
 
 function set_file(id, file) {
@@ -136,7 +139,7 @@ menu.on("open_in_current_window", (win) => {
 });
 
 async function preferences() {
-    const preferences = await window.static("app/html/preferences.html", {width: 480, height: 690});
+    const preferences = await window.static("app/html/preferences.html", {width: 480, height: 710});
     preferences.send("prefs", prefs.get_all());
 }
 menu.on("preferences", preferences);

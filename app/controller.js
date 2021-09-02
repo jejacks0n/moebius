@@ -3,7 +3,7 @@ const {on, send, send_sync, msg_box, save_box} = require("./senders");
 const doc = require("./document/doc");
 const {tools} = require("./document/ui/ui");
 const {HourlySaver} = require("./hourly_saver");
-const {remove_ice_colors} = require("./libtextmode/libtextmode");
+const {remove_ice_colors, doc_type_from_filename} = require("./libtextmode/libtextmode");
 let hourly_saver, backup_folder;
 require("./document/ui/canvas");
 require("./document/tools/select");
@@ -16,6 +16,8 @@ require("./document/tools/ellipse_filled");
 require("./document/tools/ellipse_outline");
 require("./document/tools/fill");
 require("./document/tools/sample");
+
+window.doc = doc;
 
 doc.on("start_rendering", () => send_sync("show_rendering_modal"));
 doc.on("end_rendering", () => send("close_modal"));
@@ -73,9 +75,8 @@ function save(destroy_when_done = false, save_without_sauce = false) {
 }
 
 async function save_as(destroy_when_done = false) {
-    debugger
-    const ext = doc.file.toString().split('.').pop()
-    const file = save_box(doc.file, ext || "ans", { filters: doc.save_filters() });
+    const type = doc_type_from_filename(doc.file);
+    const file = save_box(doc.file, type.default_file_ext, { filters: type.save_filters });
     if (!file) return;
 
     if (file === doc.file) {
@@ -89,8 +90,9 @@ async function save_as(destroy_when_done = false) {
 }
 
 async function save_without_sauce() {
-    const ext = doc.file.toString().split('.').pop()
-    const file = save_box(doc.file, ext || "ans", { filters: doc.save_filters() });
+    const type = doc_type_from_filename(doc.file);
+    const file = save_box(doc.file, type.default_file_ext, { filters: type.save_filters });
+    if (!file) return;
 
     if (file === doc.file) {
         doc.file = file;
@@ -149,7 +151,7 @@ function use_backup(value) {
     }
 }
 
-// electron.remote.getCurrentWebContents().openDevTools();
+electron.remote.getCurrentWebContents().openDevTools();
 on("new_document", (event, opts) => doc.new_document(opts));
 on("revert_to_last_save", (event, opts) => doc.open(doc.file));
 on("show_file_in_folder", (event, opts) => electron.shell.showItemInFolder(doc.file));

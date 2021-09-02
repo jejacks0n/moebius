@@ -6,7 +6,7 @@ function $(name) {
     return document.getElementById(name);
 }
 
-function prefs({nick, group, use_numpad, use_shift, chunked_undo, use_flashing_cursor, use_pixel_aliasing, hide_scrollbars, unsaved_changes, scroll_margin, new_document_rows, retention, smallscale_guide, debug, ignore_hdpi, discord, use_backup, backup_folder}) {
+function prefs({nick, group, use_numpad, use_shift, chunked_undo, use_flashing_cursor, use_pixel_aliasing, hide_scrollbars, unsaved_changes, scroll_margin, new_document_type, new_document_rows, retention, smallscale_guide, debug, ignore_hdpi, discord, use_backup, backup_folder}) {
     $("nick").value = nick;
     $("group").value = group;
     $("use_numpad").checked = use_numpad;
@@ -17,6 +17,7 @@ function prefs({nick, group, use_numpad, use_shift, chunked_undo, use_flashing_c
     $("hide_scrollbars").checked = hide_scrollbars;
     $("unsaved_changes").checked = unsaved_changes;
     $("scroll_margin").value = scroll_margin;
+    $("new_document_type").value = new_document_type;
     $("new_document_rows").value = new_document_rows;
     $("retention").value = retention;
     $("smallscale_guide").checked = smallscale_guide;
@@ -70,6 +71,10 @@ function unsaved_changes() {
 
 function scroll_margin() {
     update("scroll_margin", $("scroll_margin").value);
+}
+
+function new_document_type() {
+    update("new_document_type", $("new_document_type").value);
 }
 
 function new_document_rows() {
@@ -153,6 +158,7 @@ document.addEventListener("DOMContentLoaded", (event) => {
     $("use_pixel_aliasing").addEventListener("change", (event) => use_pixel_aliasing(), true);
     $("scroll_margin").addEventListener("input", (event) => scroll_margin(), true);
     $("scroll_margin").addEventListener("keydown", override_submit, true);
+    $("new_document_type").addEventListener("change", new_document_type, true);
     $("new_document_rows").addEventListener("input", (event) => new_document_rows(), true);
     $("new_document_rows").addEventListener("keydown", override_submit, true);
     $("retention").addEventListener("change", retention, true);

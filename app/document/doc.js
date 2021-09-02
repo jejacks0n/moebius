@@ -647,8 +647,9 @@ class TextModeDoc extends events.EventEmitter {
         }
     }
 
-    async new_document({columns, rows, title, author, group, date, palette, font_name, use_9px_font, ice_colors, comments, data}) {
-        doc = libtextmode.new_document({columns, rows, title, author, group, date, palette, font_name, use_9px_font, ice_colors, comments, data});
+    async new_document({columns, rows, file, title, author, group, date, palette, font_name, use_9px_font, ice_colors, comments, data}) {
+        doc = libtextmode.new_document({columns, rows, file, title, author, group, date, palette, font_name, use_9px_font, ice_colors, comments, data});
+        this.file = file
         await this.start_rendering();
         this.emit("new_document");
         this.ready();

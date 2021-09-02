@@ -10,20 +10,52 @@ const {cp437_to_unicode, cp437_to_unicode_bytes, unicode_to_cp437} = require("./
 const fs = require("fs");
 const upng = require("upng-js");
 
-const document_types = {
-    ansi: { name: "ANSI Art", extensions: ["ans", "asc", "diz", "nfo", "txt"] },
-    xbin: { name: "XBin", extensions: ["xb"] },
-    bin: { name: "Binary Text", extensions: ["bin"] }
+const doc_types = {
+    ansi: {
+        doc_class: Ansi,
+        default_filename: 'Untitled.ans',
+        default_file_ext: 'ans',
+        save_filters: [
+            { filter: { name: "ANSI Art", extensions: ["ans", "asc", "diz", "nfo", "txt"] } },
+            { filter: { name: "XBin", extensions: ["xb"] } },
+            { filter: { name: "Binary Text", extensions: ["bin"] } },
+        ]
+    },
+    xbin: {
+        doc_class: XBin,
+        default_filename: 'Untitled.xb',
+        default_file_ext: 'xb',
+        save_filters: [
+            { filter: { name: "XBin", extensions: ["xb"] } },
+            { filter: { name: "ANSI Art", extensions: ["ans", "asc", "diz", "nfo", "txt"] } },
+            { filter: { name: "Binary Text", extensions: ["bin"] } },
+        ]
+    },
+    bin: {
+        doc_class: BinaryText,
+        default_filename: 'Untitled.bin',
+        default_file_ext: 'bin',
+        save_filters: [
+            { filter: { name: "Binary Text", extensions: ["bin"] } },
+            { filter: { name: "ANSI Art", extensions: ["ans", "asc", "diz", "nfo", "txt"] } },
+            { filter: { name: "XBin", extensions: ["xb"] } }
+        ]
+    }
+}
+
+function doc_type_from_filename(file) {
+    switch (path.extname(file).toLowerCase()) {
+        case ".bin": return doc_types.bin;
+        case ".xb": return doc_types.xbin;
+        case ".ans":
+        default:
+            return doc_types.ansi;
+    }
 }
 
 function read_bytes(bytes, file) {
-    switch (path.extname(file).toLowerCase()) {
-        case ".bin": return new BinaryText(bytes);
-        case ".xb": return new XBin(bytes);
-        case ".ans":
-        default:
-        return new Ansi(bytes);
-    }
+    const type = doc_type_from_filename(file);
+    return new type.doc_class(bytes)
 }
 
 async function read_file(file) {
@@ -561,8 +593,8 @@ function render_scroll_canvas_right(doc, render) {
     for (let y = 0; y < doc.rows; y++) render_at(render, 0, y, doc.data[y * doc.columns]);
 }
 
-function new_document({columns = 80, rows = 100, title = "", author = "", group = "", date = "", palette = palette_4bit, font_name = "IBM VGA", ice_colors = false, use_9px_font = false, comments = "", data} = {}) {
-    const doc = {columns, rows, title, author, group, date: (date != "") ? date : current_date(), palette, font_name, ice_colors, use_9px_font, comments};
+function new_document({columns = 80, rows = 100, file = null, title = "", author = "", group = "", date = "", palette = palette_4bit, font_name = "IBM VGA", ice_colors = false, use_9px_font = false, comments = "", data} = {}) {
+    const doc = {columns, rows, file, title, author, group, date: (date != "") ? date : current_date(), palette, font_name, ice_colors, use_9px_font, comments};
     if (!data || data.length != columns * rows) {
         doc.data = new Array(columns * rows);
         for (let i = 0; i < doc.data.length; i++) doc.data[i] = {fg: 7, bg: 0, code: 32};
@@ -701,4 +733,4 @@ function remove_ice_colors(doc) {
     return new_doc;
 }
 
-module.exports = {Font, document_types, read_bytes, read_file, write_file, animate, render, render_split, render_at, render_insert_column, render_delete_column, render_insert_row, render_delete_row, new_document, clone_document, resize_canvas, cp437_to_unicode, cp437_to_unicode_bytes, unicode_to_cp437, render_blocks, merge_blocks, flip_code_x, flip_x, flip_y, rotate, insert_column, insert_row, delete_column, delete_row, scroll_canvas_up, scroll_canvas_down, scroll_canvas_left, scroll_canvas_right, render_scroll_canvas_up, render_scroll_canvas_down, render_scroll_canvas_left, render_scroll_canvas_right, get_data_url, compress, uncompress, get_blocks, get_all_blocks, export_as_png, export_as_apng, has_base_palette, encode_as_bin, encode_as_xbin, encode_as_ansi, remove_ice_colors};
+module.exports = {Font, doc_types, doc_type_from_filename, read_file, write_file, animate, render, render_split, render_at, render_insert_column, render_delete_column, render_insert_row, render_delete_row, new_document, clone_document, resize_canvas, cp437_to_unicode, cp437_to_unicode_bytes, unicode_to_cp437, render_blocks, merge_blocks, flip_code_x, flip_x, flip_y, rotate, insert_column, insert_row, delete_column, delete_row, scroll_canvas_up, scroll_canvas_down, scroll_canvas_left, scroll_canvas_right, render_scroll_canvas_up, render_scroll_canvas_down, render_scroll_canvas_left, render_scroll_canvas_right, get_data_url, compress, uncompress, get_blocks, get_all_blocks, export_as_png, export_as_apng, has_base_palette, encode_as_bin, encode_as_xbin, encode_as_ansi, remove_ice_colors};

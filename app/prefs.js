@@ -12,6 +12,7 @@ const default_values = {
     hide_scrollbars: false,
     unsaved_changes: true,
     scroll_margin: 0,
+    new_document_type: 'ansi',
     new_document_rows: 25,
     retention: "8035200",
     smallscale_guide: false,
